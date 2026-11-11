@@ -59,6 +59,33 @@ export async function getLatestItems(userId: string, token: string, limit = 20) 
   return res.json();
 }
 
+export async function searchItems(
+  userId: string,
+  token: string,
+  searchTerm: string,
+  limit = 30
+) {
+  if (!searchTerm.trim()) return { Items: [], TotalRecordCount: 0 };
+
+  const params = new URLSearchParams({
+    UserId: userId,
+    SearchTerm: searchTerm,
+    Recursive: "true",
+    Limit: limit.toString(),
+    Fields: "PrimaryImageAspectRatio,Overview,ProductionYear",
+    ImageTypeLimit: "1",
+    EnableImageTypes: "Primary",
+    IncludeItemTypes: "Movie,Series,Episode,Audio,MusicAlbum,MusicArtist",
+  });
+
+  const res = await fetch(`${BASE_URL}/Users/${userId}/Items?${params}`, {
+    headers: { Authorization: getAuthHeader(token) },
+  });
+
+  if (!res.ok) throw new Error("Gagal melakukan pencarian");
+  return res.json();
+}
+
 export function getImageUrl(itemId: string, token: string, tag?: string) {
   const params = new URLSearchParams({
     maxWidth: "400",
