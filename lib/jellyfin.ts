@@ -43,6 +43,20 @@ export async function getViews(userId: string, token: string) {
   return res.json();
 }
 
+export async function getGenres(userId: string, token: string) {
+  const params = new URLSearchParams({
+    UserId: userId,
+    Recursive: "true",
+  });
+
+  const res = await fetch(`${BASE_URL}/Genres?${params}`, {
+    headers: { Authorization: getAuthHeader(token) },
+  });
+
+  if (!res.ok) throw new Error("Gagal mengambil genres");
+  return res.json();
+}
+
 export async function getLatestItems(userId: string, token: string, limit = 20) {
   const params = new URLSearchParams({
     UserId: userId,
@@ -63,20 +77,31 @@ export async function searchItems(
   userId: string,
   token: string,
   searchTerm: string,
-  limit = 30
+  genreIds: string[] = [],
+  limit = 40
 ) {
-  if (!searchTerm.trim()) return { Items: [], TotalRecordCount: 0 };
-
   const params = new URLSearchParams({
     UserId: userId,
-    SearchTerm: searchTerm,
     Recursive: "true",
     Limit: limit.toString(),
-    Fields: "PrimaryImageAspectRatio,Overview,ProductionYear",
+    Fields: "PrimaryImageAspectRatio,Overview,ProductionYear,Genres",
     ImageTypeLimit: "1",
     EnableImageTypes: "Primary",
-    IncludeItemTypes: "Movie,Series,Episode,Audio,MusicAlbum,MusicArtist",
+    IncludeItemTypes: "Movie,Series,Episode,Audio,MusicAlbum",
   });
+
+  if (searchTerm.trim()) {
+    params.set("SearchTerm", searchTerm);
+  }
+
+  if (genreIds.length > 0) {
+    params.set("GenreIds", genreIds.join(","));
+  }
+
+  // Jika tidak ada search term dan tidak ada genre, kembalikan empty
+  if (!searchTerm.trim() && genreIds.length === 0) {
+    return { Items: [], TotalRecordCount: 0 };
+  }
 
   const res = await fetch(`${BASE_URL}/Users/${userId}/Items?${params}`, {
     headers: { Authorization: getAuthHeader(token) },
